@@ -11,6 +11,8 @@ import (
 	"github.com/line/line-bot-sdk-go/v7/linebot"
 )
 
+const ImagePrompt = "Describe this image with scientific detail, reply in zh-TW:"
+
 func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	events, err := bot.ParseRequest(r)
 
@@ -28,12 +30,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 			switch message := event.Message.(type) {
 			// Handle only on text message
 			case *linebot.TextMessage:
-				req := message.Text
-
-				// Reply with Gemini result
-				ret := GeminiChatComplete(req)
-
-				if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(ret)).Do(); err != nil {
+				if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage("請上傳一張美食照片，開始相關功能吧！")).Do(); err != nil {
 					log.Print(err)
 				}
 			// Handle only on Sticker message
@@ -62,7 +59,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					log.Fatal(err)
 				}
-				ret, err := GeminiImage(data, "Describe this image with scientific detail, reply in zh-TW:")
+				ret, err := GeminiImage(data, ImagePrompt)
 				if err != nil {
 					ret = "無法辨識影片內容文字，請重新輸入:" + err.Error()
 				}
