@@ -30,7 +30,9 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 			switch message := event.Message.(type) {
 			// Handle only on text message
 			case *linebot.TextMessage:
-				if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage("請上傳一張美食照片，開始相關功能吧！")).Do(); err != nil {
+				cameraReply := linebot.NewQuickReplyButton("", linebot.NewCameraAction("Camera"))
+				_, err := bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage("請上傳一張美食照片，開始相關功能吧！").WithQuickReplies(linebot.NewQuickReplyItems(cameraReply))).Do()
+				if err != nil {
 					log.Print(err)
 				}
 			// Handle only on Sticker message
@@ -63,7 +65,12 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					ret = "無法辨識影片內容文字，請重新輸入:" + err.Error()
 				}
-				if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(ret)).Do(); err != nil {
+
+				// Prepare QuickReply buttons.
+				calc := linebot.NewQuickReplyButton("", linebot.NewPostbackAction("calc", "action=calc&st="+ret, "計算卡路里", "計算卡路里"))
+
+				// Determine the push msg target.
+				if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(ret).WithQuickReplies(linebot.NewQuickReplyItems(calc))).Do(); err != nil {
 					log.Print(err)
 				}
 
