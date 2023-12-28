@@ -1,4 +1,4 @@
-module github.com/kkdai/linebot-gemini-pro
+module github.com/kkdai/linebot-food-enthusiast
 
 // +heroku goVersion go1.21.1
 go 1.21.1
