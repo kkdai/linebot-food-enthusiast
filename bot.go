@@ -11,6 +11,8 @@ import (
 	"github.com/line/line-bot-sdk-go/v7/linebot"
 )
 
+const ImagePrompt = "你是一個美食烹飪專家，根據這張圖片給予相關的食物敘述，越詳細越好。"
+
 func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	events, err := bot.ParseRequest(r)
 
@@ -28,12 +30,9 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 			switch message := event.Message.(type) {
 			// Handle only on text message
 			case *linebot.TextMessage:
-				req := message.Text
-
-				// Reply with Gemini result
-				ret := GeminiChatComplete(req)
-
-				if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(ret)).Do(); err != nil {
+				cameraReply := linebot.NewQuickReplyButton("", linebot.NewCameraAction("Camera"))
+				_, err := bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage("請上傳一張美食照片，開始相關功能吧！").WithQuickReplies(linebot.NewQuickReplyItems(cameraReply))).Do()
+				if err != nil {
 					log.Print(err)
 				}
 			// Handle only on Sticker message
@@ -62,11 +61,16 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					log.Fatal(err)
 				}
-				ret, err := GeminiImage(data, "Describe this image with scientific detail, reply in zh-TW:")
+				ret, err := GeminiImage(data, ImagePrompt)
 				if err != nil {
 					ret = "無法辨識影片內容文字，請重新輸入:" + err.Error()
 				}
-				if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(ret)).Do(); err != nil {
+
+				// Prepare QuickReply buttons.
+				calc := linebot.NewQuickReplyButton("", linebot.NewPostbackAction("calc", "action=calc&st="+ret, "計算卡路里", "計算卡路里"))
+
+				// Determine the push msg target.
+				if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(ret).WithQuickReplies(linebot.NewQuickReplyItems(calc))).Do(); err != nil {
 					log.Print(err)
 				}
 
