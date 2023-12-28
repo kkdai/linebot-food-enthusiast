@@ -11,7 +11,7 @@ import (
 	"github.com/line/line-bot-sdk-go/v7/linebot"
 )
 
-const ImagePrompt = "Describe this image with scientific detail, reply in zh-TW:"
+const ImagePrompt = "你是一個美食烹飪專家，根據這張圖片給予相關的食物敘述，越詳細越好。"
 
 func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	events, err := bot.ParseRequest(r)
