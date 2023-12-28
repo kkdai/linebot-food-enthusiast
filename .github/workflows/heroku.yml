@@ -1,9 +1,8 @@
 name: Deploy
 
 on:
-  push:
-    tags:
-      - main
+  release:
+    types: [created]
 
 jobs:
   build:
