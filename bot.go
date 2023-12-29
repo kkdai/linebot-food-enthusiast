@@ -130,7 +130,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// CalcCalories: Calculate calories from string.
+// CalcCalories: Calculate calories from image.
 func calcCalories(target, m_id string, bot *linebot.Client) {
 	// Get image data
 	data, err := GetImageBinary(bot, m_id)
@@ -162,7 +162,7 @@ func searchCooking(target, m_id string, bot *linebot.Client) {
 	}
 
 	// Chat with Image
-	ret, err := GeminiImage(data, CalcPrompt)
+	ret, err := GeminiImage(data, CookImg)
 	if err != nil {
 		log.Println("Got GeminiImage err:", err)
 		return
