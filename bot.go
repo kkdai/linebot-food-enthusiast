@@ -58,15 +58,12 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 				log.Println("Got img msg ID:", message.ID)
 
 				//Get image binary from LINE server based on message ID.
-				content, err := bot.GetMessageContent(message.ID).Do()
+				data, err := GetImageBinary(bot, message.ID)
 				if err != nil {
 					log.Println("Got GetMessageContent err:", err)
+					continue
 				}
-				defer content.Content.Close()
-				data, err := io.ReadAll(content.Content)
-				if err != nil {
-					log.Fatal(err)
-				}
+
 				ret, err := GeminiImage(data, ImagePrompt)
 				if err != nil {
 					ret = "無法辨識影片內容文字，請重新輸入:" + err.Error()
