@@ -6,12 +6,18 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 
 	"cloud.google.com/go/storage"
 	"github.com/line/line-bot-sdk-go/v7/linebot"
 )
 
+// Const variables of Prompts.
 const ImagePrompt = "你是一個美食烹飪專家，根據這張圖片給予相關的食物敘述，越詳細越好。"
+const CalcPrompt = "根據以下的食物敘述，幫我計算食物的卡路里。"
+
+// Image statics link.
+const CalcImg = "https://raw.githubusercontent.com/kkdai/linebot-food-enthusiast/main/img/calc.jpg"
 
 func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	events, err := bot.ParseRequest(r)
@@ -67,7 +73,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 				}
 
 				// Prepare QuickReply buttons.
-				calc := linebot.NewQuickReplyButton("", linebot.NewPostbackAction("calc", "action=calc&st="+ret, "計算卡路里", "計算卡路里"))
+				calc := linebot.NewQuickReplyButton(CalcImg, linebot.NewPostbackAction("calc", "action=calc&st="+ret, "", "計算卡路里"))
 
 				// Determine the push msg target.
 				if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(ret).WithQuickReplies(linebot.NewQuickReplyItems(calc))).Do(); err != nil {
@@ -94,10 +100,44 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 				// 	log.Print(err)
 				// }
 			}
+		} else if event.Type == linebot.EventTypePostback {
+			// Using urls value to parse event.Postback.Data strings.
+			ret, err := url.ParseQuery(event.Postback.Data)
+			if err != nil {
+				log.Print("action parse err:", err, " dat=", event.Postback.Data)
+				continue
+			}
+
+			log.Println("Action:", ret["action"])
+			log.Println("Calc calories st:", ret["st"])
+
+			// Handle only on Postback message
+			if ret["action"][0] == "calc" {
+				// Determine the push msg target.
+				target := event.Source.UserID
+				if event.Source.GroupID != "" {
+					target = event.Source.GroupID
+				} else if event.Source.RoomID != "" {
+					target = event.Source.RoomID
+				}
+				go calcCalories(target, ret["st"][0], bot)
+			}
 		}
 	}
 }
 
+// CalcCalories: Calculate calories from string.
+func calcCalories(target, st string, bot *linebot.Client) {
+	// Call GeminiChatComplete to get the response string.
+	ret := GeminiChatComplete(CalcPrompt + st)
+
+	// Determine the push msg target.
+	if _, err := bot.PushMessage(target, linebot.NewTextMessage(ret)).Do(); err != nil {
+		log.Print(err)
+	}
+}
+
+// UploadAndDectect: Upload video to GCS and detect string from video.
 func uploadAndDectect(target string, msg *linebot.VideoMessage, bot *linebot.Client) {
 	//Get video content from LINE server based on message ID.
 	content, err := bot.GetMessageContent(msg.ID).Do()
