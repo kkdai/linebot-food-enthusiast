@@ -248,3 +248,20 @@ func newVideoFlexMsg(video, text string) linebot.FlexContainer {
 		},
 	}
 }
+
+// GetImageBinary: Get image binary from LINE server based on message ID.
+func GetImageBinary(bot *linebot.Client, messageID string) ([]byte, error) {
+	// Get image binary from LINE server based on message ID.
+	content, err := bot.GetMessageContent(messageID).Do()
+	if err != nil {
+		return nil, fmt.Errorf("Got GetMessageContent err: %v", err)
+	}
+	defer content.Content.Close()
+
+	data, err := io.ReadAll(content.Content)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
