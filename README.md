@@ -1,9 +1,10 @@
-LINE Bot template with Google Gemini Pro
+LINE Bot 使用 Google Gemini Pro 來做你的餐飲專家
+
 ---
 
  [![GoDoc](https://godoc.org/github.com/kkdai/linebot-gemini-pro.svg?status.svg)](https://godoc.org/github.com/kkdai/LineBotTemplate)   ![Go](https://github.com/kkdai/linebot-gemini-pro/workflows/Go/badge.svg) [![goreportcard.com](https://goreportcard.com/badge/github.com/kkdai/linebot-gemini-pro)](https://goreportcard.com/report/github.com/kkdai/linebot-gemini-pro)
 
-![image-20231216023250102](img/image-20231216023250102.png)
+![](img/cook.jpeg)
 
 ## 如何快速架設在自己平台
 
