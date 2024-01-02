@@ -4,7 +4,11 @@ LINE Bot 使用 Google Gemini Pro 來做你的餐飲專家
 
  [![GoDoc](https://godoc.org/github.com/kkdai/linebot-gemini-pro.svg?status.svg)](https://godoc.org/github.com/kkdai/LineBotTemplate)   ![Go](https://github.com/kkdai/linebot-gemini-pro/workflows/Go/badge.svg) [![goreportcard.com](https://goreportcard.com/badge/github.com/kkdai/linebot-gemini-pro)](https://goreportcard.com/report/github.com/kkdai/linebot-gemini-pro)
 
-![](img/cook.jpeg)
+<img src="img/cook.jpeg" style="zoom:25%;" />
+
+# LINE Bot Screen
+
+<img src="img/app_1.png" style="zoom:25%;" /><img src="img/app_2.png" style="zoom:25%;" />
 
 ## 如何快速架設在自己平台
 
@@ -51,7 +55,6 @@ LINE Bot 使用 Google Gemini Pro 來做你的餐飲專家
 ### 如何使用
 
 - 打開聊天機器人
-  - **直接打字：** 透過文字直接跟 Gemini Pro 溝通 (透過 Gemini Pro Chat)。
   - **傳送圖片：** 直接辨識圖片內容，目前的想法是透過比較科學化的角度來說明。
 
 ### 完整開發教學
