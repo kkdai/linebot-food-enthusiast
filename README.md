@@ -27,12 +27,14 @@ LINE Bot 使用 Google Gemini Pro 來做你的餐飲專家
 
 1. 請先到程式碼:  [https://github.com/kkdai/linebot-gemini-pro]( https://github.com/kkdai/linebot-gemini-pro)
 
-2. 部署到雲服務平台 (兩個擇一即可）：
+2. 部署到雲服務平台 (三個擇一即可）：
 
    2.1.  按下： [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)  來部署到你的 Heroku 帳號
 
-   2.12  按下： [![Deploy to Render](http://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+   2.2  按下： [![Deploy to Render](http://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
  來部署到你的 Render 帳號
+
+   2.3  按下： [![Run on Google Cloud](https://deploy.cloud.run/button.svg)](https://deploy.cloud.run)來部署到你的  Google CloudRun.
 
 3. 除了填寫 App Name 以外，以下的參數必須要填入才能完整運行。
 
