@@ -34,8 +34,6 @@ LINE Bot 使用 Google Gemini Pro 來做你的餐飲專家
    2.2  按下： [![Deploy to Render](http://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
  來部署到你的 Render 帳號
 
-   2.3 按下  [Deploy to Rrailway](https://railway.app/button) 來部署到你的 railway 帳號
-
 3. 除了填寫 App Name 以外，以下的參數必須要填入才能完整運行。
 
    1. **ChannelAccessToken**: 請到 LINE Developers Console issue 一個。
