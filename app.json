@@ -31,14 +31,5 @@
       "description": "Get from https://makersuite.google.com/app/apikey",
       "required": true
     }
-  },
-  "options": {
-    "allow-unauthenticated": false,
-    "memory": "512Mi",
-    "cpu": "1",
-    "port": 80,
-    "http2": false,
-    "concurrency": 80,
-    "max-instances": 10
   }
 }
