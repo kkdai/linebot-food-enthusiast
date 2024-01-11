@@ -18,25 +18,34 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/line/line-bot-sdk-go/v7/linebot"
+	"github.com/line/line-bot-sdk-go/v8/linebot/messaging_api"
 )
-
-var bot *linebot.Client
 
 var projectID string
 var bucketName string
 var geminiKey string
+var channelToken string
+
+var bot *messaging_api.MessagingApiAPI
+var blob *messaging_api.MessagingApiBlobAPI
 
 func main() {
 	var err error
 	projectID = os.Getenv("GCS_PROJECT_ID")
 	bucketName = os.Getenv("GCS_BUCKET_NAME")
 	geminiKey = os.Getenv("GOOGLE_GEMINI_API_KEY")
+	channelToken = os.Getenv("ChannelAccessToken")
 
-	bot, err = linebot.New(os.Getenv("ChannelSecret"), os.Getenv("ChannelAccessToken"))
+	bot, err = messaging_api.NewMessagingApiAPI(channelToken)
 	if err != nil {
-		log.Println("Bot:", bot, " err:", err)
+		log.Fatal(err)
 	}
+
+	blob, err = messaging_api.NewMessagingApiBlobAPI(channelToken)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	http.HandleFunc("/callback", callbackHandler)
 	port := os.Getenv("PORT")
 	addr := fmt.Sprintf(":%s", port)
