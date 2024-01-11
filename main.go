@@ -21,7 +21,6 @@ import (
 	"github.com/line/line-bot-sdk-go/v8/linebot/messaging_api"
 )
 
-var projectID string
 var bucketName string
 var geminiKey string
 var channelToken string
@@ -31,8 +30,6 @@ var blob *messaging_api.MessagingApiBlobAPI
 
 func main() {
 	var err error
-	projectID = os.Getenv("GCS_PROJECT_ID")
-	bucketName = os.Getenv("GCS_BUCKET_NAME")
 	geminiKey = os.Getenv("GOOGLE_GEMINI_API_KEY")
 	channelToken = os.Getenv("ChannelAccessToken")
 
