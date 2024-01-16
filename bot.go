@@ -22,6 +22,24 @@ const CookPrompt = "根據這張圖片，幫我找到相關的食譜。"
 const CalcImg = "https://raw.githubusercontent.com/kkdai/linebot-food-enthusiast/main/img/calc.jpg"
 const CookImg = "https://raw.githubusercontent.com/kkdai/linebot-food-enthusiast/main/img/cooking.png"
 
+// pushMsg: Push message to LINE server.
+func pushMsg(target, text string) error {
+	if _, err := bot.PushMessage(
+		&messaging_api.PushMessageRequest{
+			To: target,
+			Messages: []messaging_api.MessageInterface{
+				&messaging_api.TextMessage{
+					Text: text,
+				},
+			},
+		},
+		"",
+	); err != nil {
+		return err
+	}
+	return nil
+}
+
 // replyText: Reply text message to LINE server.
 func replyText(replyToken, text string) error {
 	if _, err := bot.ReplyMessage(
@@ -217,7 +235,7 @@ func processImage(target, m_id, prompt, errMsg string, blob *messaging_api.Messa
 	}
 
 	// Determine the push msg target.
-	if err := replyText(target, ret); err != nil {
+	if err := pushMsg(target, ret); err != nil {
 		log.Print(err)
 	}
 }
