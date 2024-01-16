@@ -3,13 +3,13 @@ LINE Bot 使用 Google Gemini Pro 來做你的餐飲專家
 
  [![GoDoc](https://godoc.org/github.com/kkdai/linebot-gemini-pro.svg?status.svg)](https://godoc.org/github.com/kkdai/LineBotTemplate)   ![Go](https://github.com/kkdai/linebot-gemini-pro/workflows/Go/badge.svg) [![goreportcard.com](https://goreportcard.com/badge/github.com/kkdai/linebot-gemini-pro)](https://goreportcard.com/report/github.com/kkdai/linebot-gemini-pro)
 
-<img src="img/cook.jpeg" style="zoom:25%;" />
+<img src="img/cook.jpeg" style="zoom:10%;" />
 
 # LINE Bot Screen
 
 <img src="img/app_2.png" style="zoom:25%;" />
 <img src="img/app_1.png" style="zoom:25%;" />
-<img src="img/dinner.jpg" style="zoom:25%;" />
+<img src="img/dinner.jpg" style="zoom:20%;" />
 
 ## 如何快速架設在自己平台
 
