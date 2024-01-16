@@ -142,16 +142,16 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 							Action: &messaging_api.PostbackAction{
 								Label:       "calc",
 								Data:        "action=calc&m_id=" + message.Id,
-								DisplayText: "",
-								Text:        "計算卡路里",
+								DisplayText: "計算卡路里",
+								Text:        "",
 							},
 						}, {
 							ImageUrl: CookImg,
 							Action: &messaging_api.PostbackAction{
 								Label:       "cook",
 								Data:        "action=cook&m_id=" + message.Id,
-								DisplayText: "",
-								Text:        "建議食譜",
+								DisplayText: "建議食譜",
+								Text:        "",
 							},
 						},
 					},
