@@ -175,13 +175,14 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 			// 取得用戶 ID
 			var target string
 			switch source := e.Source.(type) {
-			case *webhook.UserSource:
+			case webhook.UserSource:
 				target = source.UserId
-			case *webhook.GroupSource:
+			case webhook.GroupSource:
 				target = source.UserId
-			case *webhook.RoomSource:
+			case webhook.RoomSource:
 				target = source.UserId
 			}
+			log.Println("Target ID:", target)
 
 			// Handle only on Postback message
 			if ret["action"][0] == "calc" {
