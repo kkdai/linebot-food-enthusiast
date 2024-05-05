@@ -1,12 +1,12 @@
 module github.com/kkdai/linebot-food-enthusiast
 
 // +heroku goVersion go1.21.1
-go 1.21.1
+go 1.21
 
 require (
 	github.com/google/generative-ai-go v0.5.0
 	github.com/line/line-bot-sdk-go/v7 v7.21.0
-	github.com/line/line-bot-sdk-go/v8 v8.2.0
+	github.com/line/line-bot-sdk-go/v8 v8.6.0
 	google.golang.org/api v0.154.0
 )
 
