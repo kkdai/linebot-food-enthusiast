@@ -1,27 +1,37 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
 )
 
-func GeminiImage(imgData []byte, prompt string) (string, error) {
+type GeminiApp struct {
+	geminiKey string
+	ctx       context.Context
+	client    *genai.Client
+}
+
+func InitGemini(key string) *GeminiApp {
 	ctx := context.Background()
-	client, err := genai.NewClient(ctx, option.WithAPIKey(geminiKey))
+	client, err := genai.NewClient(ctx, option.WithAPIKey(key))
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer client.Close()
+	return &GeminiApp{key, ctx, client}
+}
 
-	model := client.GenerativeModel("gemini-pro-vision")
+// Initialize the Gemini API
+func (app *GeminiApp) GeminiFunctionCall() (string, error) {
+	return "", nil
+}
+
+func (app *GeminiApp) GeminiImage(imgData []byte, prompt string) (string, error) {
+	model := app.client.GenerativeModel("gemini-pro-vision")
 	value := float32(0.8)
 	model.Temperature = &value
 	data := []genai.Part{
@@ -29,7 +39,7 @@ func GeminiImage(imgData []byte, prompt string) (string, error) {
 		genai.Text(prompt),
 	}
 	log.Println("Begin processing image...")
-	resp, err := model.GenerateContent(ctx, data...)
+	resp, err := model.GenerateContent(app.ctx, data...)
 	log.Println("Finished processing image...", resp)
 	if err != nil {
 		log.Fatal(err)
@@ -40,21 +50,15 @@ func GeminiImage(imgData []byte, prompt string) (string, error) {
 }
 
 // Gemini Chat Complete: Iput a prompt and get the response string.
-func GeminiChatComplete(req string) string {
-	ctx := context.Background()
-	client, err := genai.NewClient(ctx, option.WithAPIKey(geminiKey))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer client.Close()
-	model := client.GenerativeModel("gemini-pro")
+func (app *GeminiApp) GeminiChatComplete(req string) string {
+	model := app.client.GenerativeModel("gemini-pro")
 	value := float32(0.8)
 	model.Temperature = &value
 	cs := model.StartChat()
 
 	send := func(msg string) *genai.GenerateContentResponse {
 		fmt.Printf("== Me: %s\n== Model:\n", msg)
-		res, err := cs.SendMessage(ctx, genai.Text(msg))
+		res, err := cs.SendMessage(app.ctx, genai.Text(msg))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -125,40 +129,6 @@ func newGenerateContentRequest(text string) GenerateContentRequest {
 	request.Contents.Parts.Text = text
 	// Add any specific function declarations or configurations here
 	return request
-}
-
-func generateContent(contentRequest GenerateContentRequest) error {
-	jsonData, err := json.Marshal(contentRequest)
-	if err != nil {
-		return fmt.Errorf("error marshalling request data: %w", err)
-	}
-
-	req, err := http.NewRequest("POST", api_url, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return fmt.Errorf("error creating request: %w", err)
-	}
-
-	query := req.URL.Query()
-	query.Add("key", geminiKey)
-	req.URL.RawQuery = query.Encode()
-
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("error making request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("error reading response body: %w", err)
-	}
-
-	fmt.Println("Response status:", resp.Status)
-	fmt.Println("Response body:", string(body))
-	return nil
 }
 
 type ResponseData []struct {

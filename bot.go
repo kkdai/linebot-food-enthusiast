@@ -129,7 +129,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 					continue
 				}
 
-				ret, err := GeminiImage(data, ImagePrompt)
+				ret, err := gemini.GeminiImage(data, ImagePrompt)
 				if err != nil {
 					ret = "無法辨識影片內容文字，請重新輸入:" + err.Error()
 				}
@@ -228,7 +228,7 @@ func processImage(target, m_id, prompt, errMsg string, blob *messaging_api.Messa
 	}
 
 	// Chat with Image
-	ret, err := GeminiImage(data, prompt)
+	ret, err := gemini.GeminiImage(data, prompt)
 	if err != nil {
 		log.Printf("Got %s err: %v", errMsg, err)
 		return

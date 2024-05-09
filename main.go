@@ -27,6 +27,7 @@ var channelToken string
 
 var bot *messaging_api.MessagingApiAPI
 var blob *messaging_api.MessagingApiBlobAPI
+var gemini *GeminiApp
 
 func main() {
 	var err error
@@ -37,6 +38,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Initialize the Gemini API
+	gemini = InitGemini(geminiKey)
+	defer gemini.client.Close()
 
 	blob, err = messaging_api.NewMessagingApiBlobAPI(channelToken)
 	if err != nil {
