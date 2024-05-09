@@ -27,6 +27,38 @@ func InitGemini(key string) *GeminiApp {
 
 // Initialize the Gemini API
 func (app *GeminiApp) GeminiFunctionCall() (string, error) {
+
+	currencyExchangeTool := &genai.Tool{
+		FunctionDeclarations: []*genai.FunctionDeclaration{{
+			Name:        "exchangeRate",
+			Description: "Lookup currency exchange rates by date",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"currencyDate": {
+						Type: genai.TypeString,
+						Description: "A date that must always be in YYYY-MM-DD format" +
+							" or the value 'latest' if a time period is not specified",
+					},
+					"currencyFrom": {
+						Type:        genai.TypeString,
+						Description: "Currency to convert from",
+					},
+					"currencyTo": {
+						Type:        genai.TypeString,
+						Description: "Currency to convert to",
+					},
+				},
+				Required: []string{"currencyDate", "currencyFrom"},
+			},
+		}},
+	}
+	// Use a model that supports function calling, like Gemini 1.0 Pro.
+	// See "Supported models" in the "Introduction to function calling" page.
+	model := app.client.GenerativeModel("gemini-1.0-pro")
+
+	// Specify the function declaration.
+	model.Tools = []*genai.Tool{currencyExchangeTool}
 	return "", nil
 }
 
