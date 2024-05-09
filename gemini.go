@@ -26,7 +26,7 @@ func InitGemini(key string) *GeminiApp {
 }
 
 // Initialize the Gemini API
-func (app *GeminiApp) GeminiFunctionCall() (string, error) {
+func (app *GeminiApp) GeminiFunctionCall(prompt string) (string, error) {
 
 	currencyExchangeTool := &genai.Tool{
 		FunctionDeclarations: []*genai.FunctionDeclaration{{
@@ -59,7 +59,45 @@ func (app *GeminiApp) GeminiFunctionCall() (string, error) {
 
 	// Specify the function declaration.
 	model.Tools = []*genai.Tool{currencyExchangeTool}
-	return "", nil
+	value := float32(0.8)
+	model.Temperature = &value
+	cs := model.StartChat()
+
+	// Send the message to the generative model.
+	resp, err := cs.SendMessage(app.ctx, genai.Text(prompt))
+	if err != nil {
+		log.Fatalf("Error sending message: %v\n", err)
+	}
+
+	// Check that you got the expected function call back.
+	part := resp.Candidates[0].Content.Parts[0]
+	funcall, ok := part.(genai.FunctionCall)
+	if !ok {
+		log.Fatalf("Expected type FunctionCall, got %T", part)
+	}
+
+	// Check that the function call name is correct.
+	if g, e := funcall.Name, currencyExchangeTool.FunctionDeclarations[0].Name; g != e {
+		log.Fatalf("Expected FunctionCall.Name %q, got %q", e, g)
+	}
+	fmt.Printf("Received function call response:\n%q\n\n", part)
+
+	apiResult := map[string]any{
+		"base":  "USD",
+		"date":  "2024-04-17",
+		"rates": map[string]any{"SEK": 0.091}}
+
+	// Send the hypothetical API result back to the generative model.
+	fmt.Printf("Sending API result:\n%q\n\n", apiResult)
+	resp, err = cs.SendMessage(app.ctx, genai.FunctionResponse{
+		Name:     currencyExchangeTool.FunctionDeclarations[0].Name,
+		Response: apiResult,
+	})
+	if err != nil {
+		log.Fatalf("Error sending message: %v\n", err)
+	}
+
+	return printResponse(resp), nil
 }
 
 func (app *GeminiApp) GeminiImage(imgData []byte, prompt string) (string, error) {

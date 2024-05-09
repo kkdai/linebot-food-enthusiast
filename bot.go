@@ -101,11 +101,19 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 			switch message := e.Message.(type) {
 			// Handle only on text message
 			case webhook.TextMessageContent:
-				// Resceive text message, reply with QuickReply buttons.
-				err := handleCameraQuickReply(e.ReplyToken)
+				funcRet, err := gemini.GeminiFunctionCall(message.Text)
 				if err != nil {
 					log.Print(err)
 				}
+				if err := replyText(e.ReplyToken, funcRet); err != nil {
+					log.Print(err)
+				}
+
+				// Resceive text message, reply with QuickReply buttons.
+				// err := handleCameraQuickReply(e.ReplyToken)
+				// if err != nil {
+				// 	log.Print(err)
+				// }
 			// Handle only on Sticker message
 			case webhook.StickerMessageContent:
 				var kw string
