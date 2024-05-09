@@ -1,27 +1,107 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
 )
 
-func GeminiImage(imgData []byte, prompt string) (string, error) {
+type GeminiApp struct {
+	geminiKey string
+	ctx       context.Context
+	client    *genai.Client
+}
+
+func InitGemini(key string) *GeminiApp {
 	ctx := context.Background()
-	client, err := genai.NewClient(ctx, option.WithAPIKey(geminiKey))
+	client, err := genai.NewClient(ctx, option.WithAPIKey(key))
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer client.Close()
+	return &GeminiApp{key, ctx, client}
+}
 
-	model := client.GenerativeModel("gemini-pro-vision")
+// Initialize the Gemini API
+func (app *GeminiApp) GeminiFunctionCall(prompt string) (string, error) {
+
+	currencyExchangeTool := &genai.Tool{
+		FunctionDeclarations: []*genai.FunctionDeclaration{{
+			Name:        "exchangeRate",
+			Description: "Lookup currency exchange rates by date",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"currencyDate": {
+						Type: genai.TypeString,
+						Description: "A date that must always be in YYYY-MM-DD format" +
+							" or the value 'latest' if a time period is not specified",
+					},
+					"currencyFrom": {
+						Type:        genai.TypeString,
+						Description: "Currency to convert from",
+					},
+					"currencyTo": {
+						Type:        genai.TypeString,
+						Description: "Currency to convert to",
+					},
+				},
+				Required: []string{"currencyDate", "currencyFrom"},
+			},
+		}},
+	}
+	// Use a model that supports function calling, like Gemini 1.0 Pro.
+	// See "Supported models" in the "Introduction to function calling" page.
+	model := app.client.GenerativeModel("gemini-1.0-pro")
+
+	// Specify the function declaration.
+	model.Tools = []*genai.Tool{currencyExchangeTool}
+	value := float32(0.8)
+	model.Temperature = &value
+	cs := model.StartChat()
+
+	// Send the message to the generative model.
+	resp, err := cs.SendMessage(app.ctx, genai.Text(prompt))
+	if err != nil {
+		log.Fatalf("Error sending message: %v\n", err)
+	}
+
+	// Check that you got the expected function call back.
+	part := resp.Candidates[0].Content.Parts[0]
+	funcall, ok := part.(genai.FunctionCall)
+	if !ok {
+		log.Fatalf("Expected type FunctionCall, got %T", part)
+	}
+
+	// Check that the function call name is correct.
+	if g, e := funcall.Name, currencyExchangeTool.FunctionDeclarations[0].Name; g != e {
+		log.Fatalf("Expected FunctionCall.Name %q, got %q", e, g)
+	}
+	fmt.Printf("Received function call response:\n%q\n\n", part)
+
+	apiResult := map[string]any{
+		"base":  "USD",
+		"date":  "2024-04-17",
+		"rates": map[string]any{"SEK": 0.091}}
+
+	// Send the hypothetical API result back to the generative model.
+	fmt.Printf("Sending API result:\n%q\n\n", apiResult)
+	resp, err = cs.SendMessage(app.ctx, genai.FunctionResponse{
+		Name:     currencyExchangeTool.FunctionDeclarations[0].Name,
+		Response: apiResult,
+	})
+	if err != nil {
+		log.Fatalf("Error sending message: %v\n", err)
+	}
+
+	return printResponse(resp), nil
+}
+
+func (app *GeminiApp) GeminiImage(imgData []byte, prompt string) (string, error) {
+	model := app.client.GenerativeModel("gemini-pro-vision")
 	value := float32(0.8)
 	model.Temperature = &value
 	data := []genai.Part{
@@ -29,7 +109,7 @@ func GeminiImage(imgData []byte, prompt string) (string, error) {
 		genai.Text(prompt),
 	}
 	log.Println("Begin processing image...")
-	resp, err := model.GenerateContent(ctx, data...)
+	resp, err := model.GenerateContent(app.ctx, data...)
 	log.Println("Finished processing image...", resp)
 	if err != nil {
 		log.Fatal(err)
@@ -40,21 +120,15 @@ func GeminiImage(imgData []byte, prompt string) (string, error) {
 }
 
 // Gemini Chat Complete: Iput a prompt and get the response string.
-func GeminiChatComplete(req string) string {
-	ctx := context.Background()
-	client, err := genai.NewClient(ctx, option.WithAPIKey(geminiKey))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer client.Close()
-	model := client.GenerativeModel("gemini-pro")
+func (app *GeminiApp) GeminiChatComplete(req string) string {
+	model := app.client.GenerativeModel("gemini-pro")
 	value := float32(0.8)
 	model.Temperature = &value
 	cs := model.StartChat()
 
 	send := func(msg string) *genai.GenerateContentResponse {
 		fmt.Printf("== Me: %s\n== Model:\n", msg)
-		res, err := cs.SendMessage(ctx, genai.Text(msg))
+		res, err := cs.SendMessage(app.ctx, genai.Text(msg))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -125,40 +199,6 @@ func newGenerateContentRequest(text string) GenerateContentRequest {
 	request.Contents.Parts.Text = text
 	// Add any specific function declarations or configurations here
 	return request
-}
-
-func generateContent(contentRequest GenerateContentRequest) error {
-	jsonData, err := json.Marshal(contentRequest)
-	if err != nil {
-		return fmt.Errorf("error marshalling request data: %w", err)
-	}
-
-	req, err := http.NewRequest("POST", api_url, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return fmt.Errorf("error creating request: %w", err)
-	}
-
-	query := req.URL.Query()
-	query.Add("key", geminiKey)
-	req.URL.RawQuery = query.Encode()
-
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("error making request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("error reading response body: %w", err)
-	}
-
-	fmt.Println("Response status:", resp.Status)
-	fmt.Println("Response body:", string(body))
-	return nil
 }
 
 type ResponseData []struct {

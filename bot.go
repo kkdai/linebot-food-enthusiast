@@ -101,11 +101,19 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 			switch message := e.Message.(type) {
 			// Handle only on text message
 			case webhook.TextMessageContent:
-				// Resceive text message, reply with QuickReply buttons.
-				err := handleCameraQuickReply(e.ReplyToken)
+				funcRet, err := gemini.GeminiFunctionCall(message.Text)
 				if err != nil {
 					log.Print(err)
 				}
+				if err := replyText(e.ReplyToken, funcRet); err != nil {
+					log.Print(err)
+				}
+
+				// Resceive text message, reply with QuickReply buttons.
+				// err := handleCameraQuickReply(e.ReplyToken)
+				// if err != nil {
+				// 	log.Print(err)
+				// }
 			// Handle only on Sticker message
 			case webhook.StickerMessageContent:
 				var kw string
@@ -129,7 +137,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 					continue
 				}
 
-				ret, err := GeminiImage(data, ImagePrompt)
+				ret, err := gemini.GeminiImage(data, ImagePrompt)
 				if err != nil {
 					ret = "無法辨識影片內容文字，請重新輸入:" + err.Error()
 				}
@@ -228,7 +236,7 @@ func processImage(target, m_id, prompt, errMsg string, blob *messaging_api.Messa
 	}
 
 	// Chat with Image
-	ret, err := GeminiImage(data, prompt)
+	ret, err := gemini.GeminiImage(data, prompt)
 	if err != nil {
 		log.Printf("Got %s err: %v", errMsg, err)
 		return
