@@ -13,6 +13,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -33,7 +34,13 @@ func main() {
 	var err error
 	geminiKey = os.Getenv("GOOGLE_GEMINI_API_KEY")
 	channelToken = os.Getenv("ChannelAccessToken")
+	gaeKey := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	firebaseURL := os.Getenv("FIREBASE_URL")
 
+	//Init firebase
+	initFirebase(gaeKey, firebaseURL, context.Background())
+
+	// initialize the messaging API
 	bot, err = messaging_api.NewMessagingApiAPI(channelToken)
 	if err != nil {
 		log.Fatal(err)
