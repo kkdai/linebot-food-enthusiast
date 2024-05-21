@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"time"
 
 	"github.com/line/line-bot-sdk-go/v7/linebot"
 	"github.com/line/line-bot-sdk-go/v8/linebot/messaging_api"
@@ -267,15 +266,13 @@ func processImage(target, m_id, prompt, proType string, blob *messaging_api.Mess
 		jsonData := removeFirstAndLastLine(responseMsg)
 		log.Println("Got JSON:", jsonData)
 		// unmarshal json
-		var foods []Food
-		if err := json.Unmarshal([]byte(jsonData), &foods); err != nil {
+		var food Food
+		if err := json.Unmarshal([]byte(jsonData), &food); err != nil {
 			log.Print(err)
 		}
-		for _, f := range foods {
-			f.Time = time.Time.String(time.Now())
-		}
+
 		// Insert data to firebase
-		if err := fireDB.InsertDB(foods); err != nil {
+		if err := fireDB.InsertDB(food); err != nil {
 			log.Print(err)
 		}
 		prompt := fmt.Sprintf("總共吃了以下食物 %s, 請幫我總結並且計算總卡路里數。 ", jsonData)
