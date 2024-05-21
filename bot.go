@@ -17,7 +17,7 @@ import (
 
 // Const variables of Prompts.
 const ImagePrompt = "你是一個美食烹飪專家，根據這張圖片給予相關的食物敘述，越詳細越好。"
-const CalcPrompt = "根據這張圖片，幫我計算食物的卡路里。 根據以下格式給我 food(name, calories), 只要給我 JSON 就好。"
+const CalcPrompt = "根據這張圖片，試著估算圖片食物的卡路里。 根據以下格式給我 food(name, calories), 只要給我 JSON 就好。"
 const CookPrompt = "根據這張圖片，幫我找到相關的食譜。盡可能詳細列出烹煮步驟跟所需要材料，謝謝。"
 
 // Image statics link.
