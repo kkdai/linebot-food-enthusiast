@@ -267,16 +267,19 @@ func processImage(target, m_id, prompt, proType string, blob *messaging_api.Mess
 		jsonData := removeFirstAndLastLine(responseMsg)
 		log.Println("Got JSON:", jsonData)
 		// unmarshal json
-		var food Food
-		if err := json.Unmarshal([]byte(jsonData), &food); err != nil {
+		var foods []Food
+		if err := json.Unmarshal([]byte(jsonData), &foods); err != nil {
 			log.Print(err)
 		}
-		food.Time = time.Time.String(time.Now())
+		for _, f := range foods {
+			f.Time = time.Time.String(time.Now())
+		}
 		// Insert data to firebase
-		if err := fireDB.InsertDB(food); err != nil {
+		if err := fireDB.InsertDB(foods); err != nil {
 			log.Print(err)
 		}
-		responseMsg = fmt.Sprintf("已經幫您計算好了，請查看您的卡路里資料: %s %d 大卡", food.Name, food.Calories)
+		prompt := fmt.Sprintf("總共吃了以下食物 %s, 請幫我總結並且計算總卡路里數。 ", jsonData)
+		responseMsg = gemini.GeminiChatComplete(prompt)
 	}
 
 	// Determine the push msg target.
