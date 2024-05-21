@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"time"
 
 	"github.com/line/line-bot-sdk-go/v7/linebot"
 	"github.com/line/line-bot-sdk-go/v8/linebot/messaging_api"
@@ -115,11 +116,22 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 			switch message := e.Message.(type) {
 			// Handle only on text message
 			case webhook.TextMessageContent:
-				funcRet, err := gemini.GeminiFunctionCall(message.Text)
+				// Get all food from firebase
+				var foods map[string]Food
+				if err := fireDB.GetFromDB(&foods); err != nil {
+					log.Print(err)
+				}
+				// Marshall to json
+				jsonData, err := json.Marshal(foods)
 				if err != nil {
 					log.Print(err)
 				}
-				if err := replyText(e.ReplyToken, funcRet); err != nil {
+
+				// Prepare QuickReply buttons.
+
+				promt := fmt.Sprintf("目前您的卡路里資料如下: %s  \n\n 幫我回答我的問題: %s\n", jsonData, message.Text)
+				answer := gemini.GeminiChatComplete(promt)
+				if err := replyText(e.ReplyToken, answer); err != nil {
 					log.Print(err)
 				}
 
@@ -254,17 +266,17 @@ func processImage(target, m_id, prompt, proType string, blob *messaging_api.Mess
 	if proType == "calc" {
 		jsonData := removeFirstAndLastLine(responseMsg)
 		log.Println("Got JSON:", jsonData)
-
-		// Insert data to firebase
-
 		// unmarshal json
 		var food Food
 		if err := json.Unmarshal([]byte(jsonData), &food); err != nil {
 			log.Print(err)
 		}
+		food.Time = time.Time.String(time.Now())
+		// Insert data to firebase
 		if err := fireDB.InsertDB(food); err != nil {
 			log.Print(err)
 		}
+		responseMsg = fmt.Sprintf("已經幫您計算好了，請查看您的卡路里資料: %s %d 大卡", food.Name, food.Calories)
 	}
 
 	// Determine the push msg target.
