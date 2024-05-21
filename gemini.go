@@ -31,7 +31,7 @@ func (app *GeminiApp) GeminiFunctionCall(prompt string) (string, error) {
 }
 
 func (app *GeminiApp) GeminiImage(imgData []byte, prompt string) (string, error) {
-	model := app.client.GenerativeModel("gemini-1.0-pro-vision")
+	model := app.client.GenerativeModel("gemini-pro-vision")
 	// Set the temperature to 0.8 for a balance between creativity and coherence.
 	value := float32(0.8)
 	model.Temperature = &value
