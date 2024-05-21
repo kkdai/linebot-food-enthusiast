@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -15,8 +16,8 @@ import (
 
 // Const variables of Prompts.
 const ImagePrompt = "你是一個美食烹飪專家，根據這張圖片給予相關的食物敘述，越詳細越好。"
-const CalcPrompt = "根據這張圖片，幫我計算食物的卡路里。"
-const CookPrompt = "根據這張圖片，幫我找到相關的食譜。"
+const CalcPrompt = "根據這張圖片，幫我計算食物的卡路里。 根據以下格式給我 food(name, calories), 只要給我 JSON 就好。"
+const CookPrompt = "根據這張圖片，幫我找到相關的食譜。盡可能詳細列出烹煮步驟跟所需要材料，謝謝。"
 
 // Image statics link.
 const CalcImg = "https://raw.githubusercontent.com/kkdai/linebot-food-enthusiast/main/img/calc.jpg"
@@ -98,6 +99,19 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Got event %v", event)
 		switch e := event.(type) {
 		case webhook.MessageEvent:
+			// 取得用戶 ID
+			var uID string
+			switch source := e.Source.(type) {
+			case webhook.UserSource:
+				uID = source.UserId
+			case webhook.GroupSource:
+				uID = source.UserId
+			case webhook.RoomSource:
+				uID = source.UserId
+			}
+			log.Println("User ID:", uID)
+			fireDB.SetPath(fmt.Sprintf("%s/%s", DBFoodPath, uID))
+
 			switch message := e.Message.(type) {
 			// Handle only on text message
 			case webhook.TextMessageContent:
@@ -109,11 +123,6 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 					log.Print(err)
 				}
 
-				// Resceive text message, reply with QuickReply buttons.
-				// err := handleCameraQuickReply(e.ReplyToken)
-				// if err != nil {
-				// 	log.Print(err)
-				// }
 			// Handle only on Sticker message
 			case webhook.StickerMessageContent:
 				var kw string
@@ -213,10 +222,10 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 			// Handle only on Postback message
 			if ret["action"][0] == "calc" {
 				// Determine the push msg target.
-				go processImage(target, ret["m_id"][0], CalcPrompt, "GeminiImage", blob) // for calcCalories
+				processImage(e.ReplyToken, ret["m_id"][0], CalcPrompt, ret["action"][0], blob) // for calcCalories
 			} else if ret["action"][0] == "cook" {
 				// Determine the push msg target.
-				go processImage(target, ret["m_id"][0], CookImg, "GeminiImage", blob) // for searchCooking
+				processImage(e.ReplyToken, ret["m_id"][0], CookImg, ret["action"][0], blob) // for searchCooking
 			}
 		case webhook.FollowEvent:
 			log.Printf("message: Got followed event")
@@ -227,7 +236,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // ProcessImage: Process an image and reply with a text.
-func processImage(target, m_id, prompt, errMsg string, blob *messaging_api.MessagingApiBlobAPI) {
+func processImage(target, m_id, prompt, proType string, blob *messaging_api.MessagingApiBlobAPI) {
 	// Get image data
 	data, err := GetImageBinary(blob, m_id)
 	if err != nil {
@@ -236,14 +245,39 @@ func processImage(target, m_id, prompt, errMsg string, blob *messaging_api.Messa
 	}
 
 	// Chat with Image
-	ret, err := gemini.GeminiImage(data, prompt)
+	responseMsg, err := gemini.GeminiImage(data, prompt)
 	if err != nil {
-		log.Printf("Got %s err: %v", errMsg, err)
+		log.Printf("Got %s err: %v", proType, err)
 		return
 	}
 
+	if proType == "calc" {
+		jsonData := removeFirstAndLastLine(responseMsg)
+		log.Println("Got JSON:", jsonData)
+
+		// Insert data to firebase
+
+		// unmarshal json
+		var food Food
+		if err := json.Unmarshal([]byte(jsonData), &food); err != nil {
+			log.Print(err)
+		}
+		if err := fireDB.InsertDB(food); err != nil {
+			log.Print(err)
+		}
+	}
+
 	// Determine the push msg target.
-	if err := pushMsg(target, ret); err != nil {
+	if _, err := bot.ReplyMessage(
+		&messaging_api.ReplyMessageRequest{
+			ReplyToken: target,
+			Messages: []messaging_api.MessageInterface{
+				&messaging_api.TextMessage{
+					Text: responseMsg,
+				},
+			},
+		},
+	); err != nil {
 		log.Print(err)
 	}
 }
