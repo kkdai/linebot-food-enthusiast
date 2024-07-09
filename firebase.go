@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"time"
 
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/db"
@@ -67,4 +68,12 @@ func initFirebase(gap, firebaseURL string, ctx context.Context) {
 	}
 	fireDB.Client = client
 	fireDB.ctx = ctx
+}
+
+// GetLocalTimeString: Get local time string
+func GetLocalTimeString() string {
+	timelocal, _ := time.LoadLocation("Asia/Taipei")
+	time.Local = timelocal
+	curNow := time.Now().Local().String()
+	return curNow
 }

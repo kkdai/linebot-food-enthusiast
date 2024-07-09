@@ -58,6 +58,7 @@ func replyText(replyToken, text string) error {
 	return nil
 }
 
+// handleCameraQuickReply: Handle camera quick reply.
 func handleCameraQuickReply(replyToken string) error {
 	msg := &messaging_api.TextMessage{
 		Text: "請上傳一張美食照片，開始相關功能吧！",
@@ -270,6 +271,9 @@ func processImage(target, m_id, prompt, proType string, blob *messaging_api.Mess
 		if err := json.Unmarshal([]byte(jsonData), &food); err != nil {
 			log.Print(err)
 		}
+
+		// Add time
+		food.Time = GetLocalTimeString()
 
 		// Insert data to firebase
 		if err := fireDB.InsertDB(food); err != nil {
