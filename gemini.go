@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
@@ -16,18 +18,61 @@ type GeminiApp struct {
 	client    *genai.Client
 }
 
+var calorieTrackingTool *genai.Tool
+var calorieSummaryTool *genai.Tool
+
 func InitGemini(key string) *GeminiApp {
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, option.WithAPIKey(key))
 	if err != nil {
 		log.Fatal(err)
 	}
-	return &GeminiApp{key, ctx, client}
-}
 
-// Initialize the Gemini API
-func (app *GeminiApp) GeminiFunctionCall(prompt string) (string, error) {
-	return app.GeminiChatComplete(prompt), nil
+	calorieTrackingTool = &genai.Tool{
+		FunctionDeclarations: []*genai.FunctionDeclaration{{
+			Name:        "recordCalorie",
+			Description: "Record a calorie intake with date, amount, and food item",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"foodItem": {
+						Type:        genai.TypeString,
+						Description: "The name of the food item",
+					},
+					"date": {
+						Type:        genai.TypeString,
+						Description: "The date of the intake in YYYY-MM-DD format",
+					},
+					"calories": {
+						Type:        genai.TypeNumber,
+						Description: "The amount of calories",
+					},
+				},
+				Required: []string{"foodItem", "date", "calories"},
+			},
+		}},
+	}
+
+	calorieSummaryTool = &genai.Tool{
+		FunctionDeclarations: []*genai.FunctionDeclaration{{
+			Name:        "listAllCalories",
+			Description: "List all calorie intakes within a specific date range, or all intakes if no dates are specified",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"startDate": {
+						Type:        genai.TypeString,
+						Description: "Start date of the period in YYYY-MM-DD format (optional)",
+					},
+					"endDate": {
+						Type:        genai.TypeString,
+						Description: "End date of the period in YYYY-MM-DD format (optional)",
+					},
+				},
+			},
+		}},
+	}
+	return &GeminiApp{key, ctx, client}
 }
 
 func (app *GeminiApp) GeminiImage(imgData []byte, prompt string) (string, error) {
@@ -68,6 +113,99 @@ func (app *GeminiApp) GeminiChatComplete(req string) string {
 
 	res := send(req)
 	return printResponse(res)
+}
+
+// Gemini Function Call: Input a prompt and get the response string.
+func (app *GeminiApp) GeminiFunctionCall(prompt string) string {
+	// Add timestamp for this prompt.
+	timelocal, _ := time.LoadLocation("Asia/Taipei")
+	time.Local = timelocal
+	curNow := time.Now().Local().String()
+	prompt = prompt + " 本地時間: " + curNow
+	// Use a model that supports function calling, like Gemini 1.0 Pro.
+	model := app.client.GenerativeModel("gemini-1.5-flash-latest")
+
+	// Specify the function declaration.
+	model.Tools = []*genai.Tool{calorieTrackingTool, calorieSummaryTool}
+	// Start new chat session.
+	session := model.StartChat()
+	// Send the message to the generative model.
+	resp, err := session.SendMessage(app.ctx, genai.Text(prompt))
+	if err != nil {
+		log.Fatalf("Error sending message: %v\n", err)
+	}
+
+	// Check that you got the expected function call back.
+	part := resp.Candidates[0].Content.Parts[0]
+	_, ok := part.(genai.FunctionCall)
+	if ok {
+		fmt.Printf("Received function call response:\n %s \n %s \n", part.(genai.FunctionCall).Name, part.(genai.FunctionCall).Args)
+	} else {
+		log.Printf("Expected type FunctionCall, got %T\n", part)
+	}
+
+	// According to function call Name and Args we can call the function
+	switch part.(genai.FunctionCall).Name {
+	case "recordCalorie":
+		log.Println("Calling recordCalorie function...")
+		args := part.(genai.FunctionCall).Args
+		foodItem := args["foodItem"]
+		date := args["date"]
+		calories := args["calories"]
+
+		log.Println("date: ", date, "calories: ", calories, "foodItem: ", foodItem)
+
+		// Call the hypothetical API to record the calorie intake.
+		apiResult := recordCalorie(foodItem.(string), date.(string), calories.(float64))
+		// Send the hypothetical API result back to the generative model.
+		fmt.Printf("Sending API result:\n%q\n\n", apiResult)
+		resp, err = session.SendMessage(app.ctx, genai.FunctionResponse{
+			Name:     calorieTrackingTool.FunctionDeclarations[0].Name,
+			Response: apiResult,
+		})
+		if err != nil {
+			log.Fatalf("Error sending message: %v\n", err)
+		}
+
+		// Show the model's response, which is expected to be text.
+		return printResponse(resp)
+	case "listAllCalories":
+		log.Println("Calling listAllCalories function...")
+		args := part.(genai.FunctionCall).Args
+		startDate := args["startDate"]
+		endDate := args["endDate"]
+		log.Println("startDate: ", startDate, " endDate: ", endDate)
+
+		// Call the hypothetical API to list all the calorie intakes.
+		apiResult := listAllCalories(startDate.(string), endDate.(string))
+
+		// Send the hypothetical API result back to the generative model.
+		fmt.Printf("Sending API result:\n%q\n\n", apiResult)
+		resp, err = session.SendMessage(app.ctx, genai.FunctionResponse{
+			Name:     calorieSummaryTool.FunctionDeclarations[0].Name,
+			Response: apiResult,
+		})
+		if err != nil {
+			log.Fatalf("Error sending message: %v\n", err)
+		}
+
+	}
+
+	// If no function call was made, return the response as text.
+	var foods map[string]Food
+	if err := fireDB.GetFromDB(&foods); err != nil {
+		log.Print(err)
+	}
+	// Marshall to json
+	jsonData, err := json.Marshal(foods)
+	if err != nil {
+		log.Print(err)
+	}
+
+	// Prepare QuickReply buttons.
+
+	prompt = fmt.Sprintf("目前您的卡路里資料如下: %s  \n\n 幫我回答我的問題: %s\n", jsonData, prompt)
+	return app.GeminiChatComplete(prompt)
 }
 
 // Print the response

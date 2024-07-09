@@ -116,21 +116,8 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 			switch message := e.Message.(type) {
 			// Handle only on text message
 			case webhook.TextMessageContent:
-				// Get all food from firebase
-				var foods map[string]Food
-				if err := fireDB.GetFromDB(&foods); err != nil {
-					log.Print(err)
-				}
-				// Marshall to json
-				jsonData, err := json.Marshal(foods)
-				if err != nil {
-					log.Print(err)
-				}
-
-				// Prepare QuickReply buttons.
-
-				promt := fmt.Sprintf("目前您的卡路里資料如下: %s  \n\n 幫我回答我的問題: %s\n", jsonData, message.Text)
-				answer := gemini.GeminiChatComplete(promt)
+				// Handle only on text message
+				answer := gemini.GeminiFunctionCall(message.Text)
 				if err := replyText(e.ReplyToken, answer); err != nil {
 					log.Print(err)
 				}
@@ -273,7 +260,7 @@ func processImage(target, m_id, prompt, proType string, blob *messaging_api.Mess
 		}
 
 		// Add time
-		food.Time = GetLocalTimeString()
+		food.Date = GetLocalTimeString()
 
 		// Insert data to firebase
 		if err := fireDB.InsertDB(food); err != nil {

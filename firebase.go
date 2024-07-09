@@ -14,7 +14,7 @@ import (
 type Food struct {
 	Name     string `json:"name"`
 	Calories int    `json:"calories"`
-	Time     string `json:"time"`
+	Date     string `json:"time"`
 }
 
 // DBFoodPath is the path to the namecard data in the database
@@ -76,4 +76,49 @@ func GetLocalTimeString() string {
 	time.Local = timelocal
 	curNow := time.Now().Local().String()
 	return curNow
+}
+
+// recordCalorie: 記錄卡路里攝入
+func recordCalorie(foodItem string, date string, calories float64) map[string]any {
+	// This hypothetical API returns a JSON such as:
+	// {"date":"2024-04-17","calories":200.0,"foodItem":"Apple","status":"Success"}
+
+	calorie := Food{
+		Name:     foodItem,
+		Date:     date,
+		Calories: int(calories),
+	}
+
+	// Insert the calorie intake to the database.
+	if err := fireDB.InsertDB(calorie); err != nil {
+		log.Println("Storage save err:", err)
+	}
+
+	return map[string]any{
+		"foodItem": foodItem,
+		"date":     date,
+		"calories": calories,
+		"status":   "Success",
+	}
+}
+
+// listAllCalories: 列出指定日期範圍內的所有卡路里攝入
+func listAllCalories(startDate string, endDate string) map[string]any {
+	filteredCalories := make(map[string]any)
+	// Get all calorie intakes from the database.
+	var calories map[string]Food
+	if err := fireDB.GetFromDB(&calories); err != nil {
+		log.Println("Storage get err:", err)
+		return nil
+	}
+
+	// Filter the calorie intakes based on the specified date range.
+	for _, calorie := range calories {
+		calorieDate := calorie.Date
+		// Include the calorie intake if it falls within the specified date range or if no dates are specified
+		if (startDate == "" && endDate == "") || (calorieDate >= startDate && calorieDate <= endDate) {
+			filteredCalories[calorie.Name+"-"+calorie.Date] = calorie
+		}
+	}
+	return filteredCalories
 }
