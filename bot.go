@@ -216,7 +216,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 			case webhook.RoomSource:
 				target = source.UserId
 			}
-			log.Println("Target ID:", target)
+			fireDB.SetPath(fmt.Sprintf("%s/%s", DBFoodPath, target))
 
 			// Handle only on Postback message
 			if ret["action"][0] == "calc" {
@@ -261,6 +261,9 @@ func processImage(target, m_id, prompt, proType string, blob *messaging_api.Mess
 
 		// Add time
 		food.Date = GetLocalTimeString()
+
+		// Print all food data before insert DB
+		fmt.Println("Insert food data:", food)
 
 		// Insert data to firebase
 		if err := fireDB.InsertDB(food); err != nil {

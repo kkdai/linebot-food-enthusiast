@@ -163,7 +163,7 @@ func (app *GeminiApp) GeminiFunctionCall(prompt string) string {
 			prompt := fmt.Sprintf("我剛剛吃了 %s, 請幫我猜測卡路里，大概就好，只要回覆我數字。", foodItem)
 			caloriesString := app.GeminiChatComplete(prompt)
 			// Parse the calories from the response.
-			calories, err = strconv.ParseInt(caloriesString, 10, 64)
+			calories, err := strconv.Atoi(caloriesString)
 			fmt.Println("gemini guess calories: ", calories)
 			if err != nil {
 				fmt.Println("err:", err)
