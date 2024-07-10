@@ -82,7 +82,6 @@ func GetLocalTimeString() string {
 func recordCalorie(foodItem string, date string, calories float64) map[string]any {
 	// This hypothetical API returns a JSON such as:
 	// {"date":"2024-04-17","calories":200.0,"foodItem":"Apple","status":"Success"}
-
 	calorie := Food{
 		Name:     foodItem,
 		Date:     date,

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -154,6 +155,21 @@ func (app *GeminiApp) GeminiFunctionCall(prompt string) string {
 		calories := args["calories"]
 
 		fmt.Println("date: ", date, "calories: ", calories, "foodItem: ", foodItem)
+
+		// If the calories are not provided, ask gemini to calculate the calories.
+		if calories == 0 {
+			fmt.Println("Asking Gemini to guess the calories...")
+			// using default prompt to ask user.
+			prompt := fmt.Sprintf("我剛剛吃了 %s, 請幫我猜測卡路里，大概就好，只要回覆我數字。", foodItem)
+			caloriesString := app.GeminiChatComplete(prompt)
+			// Parse the calories from the response.
+			calories, err = strconv.ParseInt(caloriesString, 10, 64)
+			fmt.Println("gemini guess calories: ", calories)
+			if err != nil {
+				fmt.Println("err:", err)
+				return fmt.Sprintf("err: %v", err)
+			}
+		}
 
 		// Call the hypothetical API to record the calorie intake.
 		apiResult := recordCalorie(foodItem.(string), date.(string), calories.(float64))
