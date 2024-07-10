@@ -84,11 +84,11 @@ func (app *GeminiApp) GeminiImage(imgData []byte, prompt string) (string, error)
 		genai.ImageData("png", imgData),
 		genai.Text(prompt),
 	}
-	log.Println("Begin processing image...")
+	fmt.Println("Begin processing image...")
 	resp, err := model.GenerateContent(app.ctx, data...)
-	log.Println("Finished processing image...", resp)
+	fmt.Println("Finished processing image...", resp)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("err:", err)
 		return "", err
 	}
 
@@ -106,7 +106,7 @@ func (app *GeminiApp) GeminiChatComplete(req string) string {
 		fmt.Printf("== Me: %s\n== Model:\n", msg)
 		res, err := cs.SendMessage(app.ctx, genai.Text(msg))
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println("err:", err)
 		}
 		return res
 	}
@@ -132,7 +132,7 @@ func (app *GeminiApp) GeminiFunctionCall(prompt string) string {
 	// Send the message to the generative model.
 	resp, err := session.SendMessage(app.ctx, genai.Text(prompt))
 	if err != nil {
-		log.Fatalf("Error sending message: %v\n", err)
+		fmt.Println("err:", err)
 	}
 
 	// Check that you got the expected function call back.
@@ -141,19 +141,19 @@ func (app *GeminiApp) GeminiFunctionCall(prompt string) string {
 	if ok {
 		fmt.Printf("Received function call response:\n %s \n %s \n", part.(genai.FunctionCall).Name, part.(genai.FunctionCall).Args)
 	} else {
-		log.Printf("Expected type FunctionCall, got %T\n", part)
+		fmt.Printf("Expected type FunctionCall, got %T\n", part)
 	}
 
 	// According to function call Name and Args we can call the function
 	switch part.(genai.FunctionCall).Name {
 	case "recordCalorie":
-		log.Println("Calling recordCalorie function...")
+		fmt.Println("Calling recordCalorie function...")
 		args := part.(genai.FunctionCall).Args
 		foodItem := args["foodItem"]
 		date := args["date"]
 		calories := args["calories"]
 
-		log.Println("date: ", date, "calories: ", calories, "foodItem: ", foodItem)
+		fmt.Println("date: ", date, "calories: ", calories, "foodItem: ", foodItem)
 
 		// Call the hypothetical API to record the calorie intake.
 		apiResult := recordCalorie(foodItem.(string), date.(string), calories.(float64))
@@ -164,17 +164,17 @@ func (app *GeminiApp) GeminiFunctionCall(prompt string) string {
 			Response: apiResult,
 		})
 		if err != nil {
-			log.Fatalf("Error sending message: %v\n", err)
+			fmt.Println("msg err:", err)
+			return fmt.Sprintf("msg err: %v", err)
 		}
-
 		// Show the model's response, which is expected to be text.
 		return printResponse(resp)
 	case "listAllCalories":
-		log.Println("Calling listAllCalories function...")
+		fmt.Println("Calling listAllCalories function...")
 		args := part.(genai.FunctionCall).Args
 		startDate := args["startDate"]
 		endDate := args["endDate"]
-		log.Println("startDate: ", startDate, " endDate: ", endDate)
+		fmt.Println("startDate: ", startDate, " endDate: ", endDate)
 
 		// Call the hypothetical API to list all the calorie intakes.
 		apiResult := listAllCalories(startDate.(string), endDate.(string))
@@ -187,23 +187,23 @@ func (app *GeminiApp) GeminiFunctionCall(prompt string) string {
 		})
 		if err != nil {
 			log.Fatalf("Error sending message: %v\n", err)
+			return fmt.Sprintf("msg err: %v", err)
 		}
-
+		return printResponse(resp)
 	}
 
 	// If no function call was made, return the response as text.
 	var foods map[string]Food
 	if err := fireDB.GetFromDB(&foods); err != nil {
-		log.Print(err)
+		fmt.Println(err)
 	}
 	// Marshall to json
 	jsonData, err := json.Marshal(foods)
 	if err != nil {
-		log.Print(err)
+		fmt.Println(err)
 	}
 
-	// Prepare QuickReply buttons.
-
+	// using default prompt to ask user.
 	prompt = fmt.Sprintf("目前您的卡路里資料如下: %s  \n\n 幫我回答我的問題: %s\n", jsonData, prompt)
 	return app.GeminiChatComplete(prompt)
 }
