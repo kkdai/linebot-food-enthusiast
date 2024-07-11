@@ -141,72 +141,72 @@ func (app *GeminiApp) GeminiFunctionCall(prompt string) string {
 	_, ok := part.(genai.FunctionCall)
 	if ok {
 		fmt.Printf("Received function call response:\n %s \n %s \n", part.(genai.FunctionCall).Name, part.(genai.FunctionCall).Args)
-	} else {
-		fmt.Printf("Expected type FunctionCall, got %T\n", part)
-	}
 
-	// According to function call Name and Args we can call the function
-	switch part.(genai.FunctionCall).Name {
-	case "recordCalorie":
-		fmt.Println("Calling recordCalorie function...")
-		args := part.(genai.FunctionCall).Args
-		foodItem := args["foodItem"]
-		date := args["date"]
-		calories := args["calories"]
+		// According to function call Name and Args we can call the function
+		switch part.(genai.FunctionCall).Name {
+		case "recordCalorie":
+			fmt.Println("Calling recordCalorie function...")
+			args := part.(genai.FunctionCall).Args
+			foodItem := args["foodItem"]
+			date := args["date"]
+			calories := args["calories"]
 
-		fmt.Println("date: ", date, "calories: ", calories, "foodItem: ", foodItem)
+			fmt.Println("date: ", date, "calories: ", calories, "foodItem: ", foodItem)
 
-		// If the calories are not provided, ask gemini to calculate the calories.
-		if calories == 0 {
-			fmt.Println("Asking Gemini to guess the calories...")
-			// using default prompt to ask user.
-			prompt := fmt.Sprintf("我剛剛吃了 %s, 請幫我猜測卡路里，大概就好，只要回覆我數字。", foodItem)
-			caloriesString := app.GeminiChatComplete(prompt)
-			// Parse the calories from the response.
-			calories, err := strconv.Atoi(caloriesString)
-			fmt.Println("gemini guess calories: ", calories)
-			if err != nil {
-				fmt.Println("err:", err)
-				return fmt.Sprintf("err: %v", err)
+			// If the calories are not provided, ask gemini to calculate the calories.
+			if calories == 0 {
+				fmt.Println("Asking Gemini to guess the calories...")
+				// using default prompt to ask user.
+				prompt := fmt.Sprintf("我剛剛吃了 %s, 請幫我猜測卡路里，大概就好，只要回覆我數字。", foodItem)
+				caloriesString := app.GeminiChatComplete(prompt)
+				// Parse the calories from the response.
+				calories, err := strconv.Atoi(caloriesString)
+				fmt.Println("gemini guess calories: ", calories)
+				if err != nil {
+					fmt.Println("err:", err)
+					return fmt.Sprintf("err: %v", err)
+				}
 			}
-		}
 
-		// Call the hypothetical API to record the calorie intake.
-		apiResult := recordCalorie(foodItem.(string), date.(string), calories.(float64))
-		// Send the hypothetical API result back to the generative model.
-		fmt.Printf("Sending API result:\n%q\n\n", apiResult)
-		resp, err = session.SendMessage(app.ctx, genai.FunctionResponse{
-			Name:     calorieTrackingTool.FunctionDeclarations[0].Name,
-			Response: apiResult,
-		})
-		if err != nil {
-			fmt.Println("msg err:", err)
-			return fmt.Sprintf("msg err: %v", err)
-		}
-		// Show the model's response, which is expected to be text.
-		return printResponse(resp)
-	case "listAllCalories":
-		fmt.Println("Calling listAllCalories function...")
-		args := part.(genai.FunctionCall).Args
-		startDate := args["startDate"]
-		endDate := args["endDate"]
-		fmt.Println("startDate: ", startDate, " endDate: ", endDate)
+			// Call the hypothetical API to record the calorie intake.
+			apiResult := recordCalorie(foodItem.(string), date.(string), calories.(float64))
+			// Send the hypothetical API result back to the generative model.
+			fmt.Printf("Sending API result:\n%q\n\n", apiResult)
+			resp, err = session.SendMessage(app.ctx, genai.FunctionResponse{
+				Name:     calorieTrackingTool.FunctionDeclarations[0].Name,
+				Response: apiResult,
+			})
+			if err != nil {
+				fmt.Println("msg err:", err)
+				return fmt.Sprintf("msg err: %v", err)
+			}
+			// Show the model's response, which is expected to be text.
+			return printResponse(resp)
+		case "listAllCalories":
+			fmt.Println("Calling listAllCalories function...")
+			args := part.(genai.FunctionCall).Args
+			startDate := args["startDate"]
+			endDate := args["endDate"]
+			fmt.Println("startDate: ", startDate, " endDate: ", endDate)
 
-		// Call the hypothetical API to list all the calorie intakes.
-		apiResult := listAllCalories(startDate.(string), endDate.(string))
+			// Call the hypothetical API to list all the calorie intakes.
+			apiResult := listAllCalories(startDate.(string), endDate.(string))
 
-		// Send the hypothetical API result back to the generative model.
-		fmt.Printf("Sending API result:\n%q\n\n", apiResult)
-		resp, err = session.SendMessage(app.ctx, genai.FunctionResponse{
-			Name:     calorieSummaryTool.FunctionDeclarations[0].Name,
-			Response: apiResult,
-		})
-		if err != nil {
-			log.Fatalf("Error sending message: %v\n", err)
-			return fmt.Sprintf("msg err: %v", err)
+			// Send the hypothetical API result back to the generative model.
+			fmt.Printf("Sending API result:\n%q\n\n", apiResult)
+			resp, err = session.SendMessage(app.ctx, genai.FunctionResponse{
+				Name:     calorieSummaryTool.FunctionDeclarations[0].Name,
+				Response: apiResult,
+			})
+			if err != nil {
+				log.Fatalf("Error sending message: %v\n", err)
+				return fmt.Sprintf("msg err: %v", err)
+			}
+			return printResponse(resp)
 		}
-		return printResponse(resp)
 	}
+	// Other cases, return the response as text.
+	fmt.Printf("Expected type FunctionCall, got %T\n", part)
 
 	// If no function call was made, return the response as text.
 	var foods map[string]Food
