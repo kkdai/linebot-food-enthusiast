@@ -20,7 +20,6 @@ type GeminiApp struct {
 }
 
 var calorieTrackingTool *genai.Tool
-var calorieSummaryTool *genai.Tool
 
 func InitGemini(key string) *GeminiApp {
 	ctx := context.Background()
@@ -54,25 +53,6 @@ func InitGemini(key string) *GeminiApp {
 		}},
 	}
 
-	calorieSummaryTool = &genai.Tool{
-		FunctionDeclarations: []*genai.FunctionDeclaration{{
-			Name:        "listAllCalories",
-			Description: "List all calorie intakes within a specific date range, or all intakes if no dates are specified",
-			Parameters: &genai.Schema{
-				Type: genai.TypeObject,
-				Properties: map[string]*genai.Schema{
-					"startDate": {
-						Type:        genai.TypeString,
-						Description: "Start date of the period in YYYY-MM-DD format (optional)",
-					},
-					"endDate": {
-						Type:        genai.TypeString,
-						Description: "End date of the period in YYYY-MM-DD format (optional)",
-					},
-				},
-			},
-		}},
-	}
 	return &GeminiApp{key, ctx, client}
 }
 
@@ -127,7 +107,7 @@ func (app *GeminiApp) GeminiFunctionCall(prompt string) string {
 	model := app.client.GenerativeModel("gemini-1.5-flash-latest")
 
 	// Specify the function declaration.
-	model.Tools = []*genai.Tool{calorieTrackingTool, calorieSummaryTool}
+	model.Tools = []*genai.Tool{calorieTrackingTool}
 	// Start new chat session.
 	session := model.StartChat()
 	// Send the message to the generative model.
@@ -181,27 +161,6 @@ func (app *GeminiApp) GeminiFunctionCall(prompt string) string {
 				return fmt.Sprintf("msg err: %v", err)
 			}
 			// Show the model's response, which is expected to be text.
-			return printResponse(resp)
-		case "listAllCalories":
-			fmt.Println("Calling listAllCalories function...")
-			args := part.(genai.FunctionCall).Args
-			startDate := args["startDate"]
-			endDate := args["endDate"]
-			fmt.Println("startDate: ", startDate, " endDate: ", endDate)
-
-			// Call the hypothetical API to list all the calorie intakes.
-			apiResult := listAllCalories(startDate.(string), endDate.(string))
-
-			// Send the hypothetical API result back to the generative model.
-			fmt.Printf("Sending API result:\n%q\n\n", apiResult)
-			resp, err = session.SendMessage(app.ctx, genai.FunctionResponse{
-				Name:     calorieSummaryTool.FunctionDeclarations[0].Name,
-				Response: apiResult,
-			})
-			if err != nil {
-				log.Fatalf("Error sending message: %v\n", err)
-				return fmt.Sprintf("msg err: %v", err)
-			}
 			return printResponse(resp)
 		}
 	}

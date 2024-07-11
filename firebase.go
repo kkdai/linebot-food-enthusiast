@@ -100,24 +100,3 @@ func recordCalorie(foodItem string, date string, calories float64) map[string]an
 		"status":   "Success",
 	}
 }
-
-// listAllCalories: 列出指定日期範圍內的所有卡路里攝入
-func listAllCalories(startDate string, endDate string) map[string]any {
-	filteredCalories := make(map[string]any)
-	// Get all calorie intakes from the database.
-	var calories map[string]Food
-	if err := fireDB.GetFromDB(&calories); err != nil {
-		log.Println("Storage get err:", err)
-		return nil
-	}
-
-	// Filter the calorie intakes based on the specified date range.
-	for _, calorie := range calories {
-		calorieDate := calorie.Date
-		// Include the calorie intake if it falls within the specified date range or if no dates are specified
-		if (startDate == "" && endDate == "") || (calorieDate >= startDate && calorieDate <= endDate) {
-			filteredCalories[calorie.Name+"-"+calorie.Date] = calorie
-		}
-	}
-	return filteredCalories
-}
