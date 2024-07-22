@@ -78,7 +78,7 @@ func (app *GeminiApp) GeminiImage(imgData []byte, prompt string) (string, error)
 
 // Gemini Chat Complete: Iput a prompt and get the response string.
 func (app *GeminiApp) GeminiChatComplete(req string) string {
-	model := app.client.GenerativeModel("gemini-1.5-flash-latest")
+	model := app.client.GenerativeModel("gemini-1.5-flash")
 	value := float32(0.8)
 	model.Temperature = &value
 	cs := model.StartChat()
