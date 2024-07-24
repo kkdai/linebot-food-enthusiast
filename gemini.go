@@ -134,7 +134,9 @@ func (app *GeminiApp) GeminiFunctionCall(prompt string) string {
 			fmt.Println("date: ", date, "calories: ", calories, "foodItem: ", foodItem)
 
 			// If the calories are not provided, ask gemini to calculate the calories.
-			if calories == 0 {
+			// Check and convert the calories to float64.
+			// Convert the calories to float64. (type any = interface{})
+			if calories == nil {
 				fmt.Println("Asking Gemini to guess the calories...")
 				// using default prompt to ask user.
 				prompt := fmt.Sprintf("我剛剛吃了 %s, 請幫我猜測卡路里，大概就好，只要回覆我數字。", foodItem)
