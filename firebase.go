@@ -79,13 +79,13 @@ func GetLocalTimeString() string {
 }
 
 // recordCalorie: 記錄卡路里攝入
-func recordCalorie(foodItem string, date string, calories float64) map[string]any {
+func recordCalorie(foodItem string, date string, calories int) map[string]any {
 	// This hypothetical API returns a JSON such as:
-	// {"date":"2024-04-17","calories":200.0,"foodItem":"Apple","status":"Success"}
+	// {"date":"2024-04-17","calories":200,"foodItem":"Apple","status":"Success"}
 	calorie := Food{
 		Name:     foodItem,
 		Date:     date,
-		Calories: int(calories),
+		Calories: calories,
 	}
 
 	// Insert the calorie intake to the database.
