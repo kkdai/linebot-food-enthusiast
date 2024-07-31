@@ -148,9 +148,16 @@ func (app *GeminiApp) GeminiFunctionCall(prompt string) string {
 			date := args["date"]
 			calories := args["calories"]
 
+			//convert float64 to int
+			caloriesInt, err := strconv.Atoi(fmt.Sprintf("%v", calories))
+			if err != nil {
+				fmt.Println("err:", err)
+				return fmt.Sprintf("err: %v", err)
+			}
+
 			fmt.Println("date: ", date, "calories: ", calories, "foodItem: ", foodItem)
 			// Call the hypothetical API to record the calorie intake.
-			apiResult := recordCalorie(foodItem.(string), date.(string), calories.(int))
+			apiResult := recordCalorie(foodItem.(string), date.(string), caloriesInt)
 			// Send the hypothetical API result back to the generative model.
 			fmt.Printf("Sending API result:\n%q\n\n", apiResult)
 			resp, err = session.SendMessage(app.ctx, genai.FunctionResponse{
@@ -173,7 +180,8 @@ func (app *GeminiApp) GeminiFunctionCall(prompt string) string {
 			// using default prompt to ask user.
 			prompt := fmt.Sprintf("我剛剛吃了 %s, 請幫我猜測卡路里，大概就好，只要回覆我數字。", foodItem)
 			caloriesString := app.GeminiChatComplete(prompt)
-			// Parse the calories from the response.
+			// Convert string to integer, e.g. "800 \n"
+			caloriesString = removeFirstAndLastLine(caloriesString)
 			calories, err := strconv.Atoi(caloriesString)
 			fmt.Println("gemini guess calories: ", calories)
 			if err != nil {
