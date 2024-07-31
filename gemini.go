@@ -52,7 +52,7 @@ func InitGemini(key string) *GeminiApp {
 			},
 		}, {
 			Name:        "recordFood",
-			Description: "Record a eating intake with date, amount, and food item",
+			Description: "Record a eating with date and food item",
 			Parameters: &genai.Schema{
 				Type: genai.TypeObject,
 				Properties: map[string]*genai.Schema{
@@ -65,7 +65,7 @@ func InitGemini(key string) *GeminiApp {
 						Description: "The date of the intake in YYYY-MM-DD format",
 					},
 				},
-				Required: []string{"foodItem", "date", "calories"},
+				Required: []string{"foodItem", "date"},
 			},
 		}},
 	}
